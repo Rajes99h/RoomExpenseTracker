@@ -1,0 +1,110 @@
+@model RoomExpenseTracker.ViewModels.AdminUserViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Admin Panel"; ViewData["ActiveTab"] = "admin";
+   var users = ViewBag.Users as List<RoomExpenseTracker.Models.User> ?? new List<RoomExpenseTracker.Models.User>();
+   var expenses = ViewBag.Expenses as List<RoomExpenseTracker.Models.Expense> ?? new List<RoomExpenseTracker.Models.Expense>();
+   decimal total = ViewBag.Total != null ? (decimal)ViewBag.Total : 0m;
+   int count = ViewBag.Count != null ? (int)ViewBag.Count : 0; }
+
+<div class="section-card">
+  <h2>👥 Users (@users.Count)</h2>
+  @foreach (var u in users) {
+    <div class="user-card">
+      <div class="user-card-header">
+        <div>
+          <div style="font-weight:700;font-size:14px;">@u.Name</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">@u.UserId · <span class="badge" style="font-size:10px;">@u.Role</span></div>
+        </div>
+      </div>
+      <div class="actions" style="display:flex;gap:8px;margin-top:12px;">
+        <a href="/Admin/EditUser/@u.UserId" style="flex:1;text-align:center;padding:8px;font-size:13px;background:linear-gradient(135deg,#34D399,#10B981);color:white;border-radius:8px;text-decoration:none;font-weight:600;display:flex;align-items:center;justify-content:center;">Edit</a>
+        <form asp-controller="Admin" asp-action="DeleteUser" method="post" style="flex:1;" onsubmit="return confirm('Delete user and all their data?')">
+          @Html.AntiForgeryToken()
+          <input type="hidden" name="id" value="@u.UserId" />
+          <button type="submit" class="btn-danger btn-full" style="font-size:13px;min-height:36px;">Delete</button>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="section-card">
+  <h2>📋 All Expenses</h2>
+  <form asp-controller="Admin" asp-action="Index" method="get" style="margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0;"><label>From</label><input type="date" name="from" value="@ViewBag.FilterFrom" /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>To</label><input type="date" name="to" value="@ViewBag.FilterTo" /></div>
+      <div class="form-group" style="margin-bottom:0;grid-column:1/-1;"><label>User</label>
+        <select name="userId">
+          <option value="">All Users</option>
+          @foreach (var u in users) {
+            @if (ViewBag.FilterUser == u.UserId) { <option value="@u.UserId" selected="selected">@u.Name</option> }
+            else { <option value="@u.UserId">@u.Name</option> }
+          }
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <button type="submit" class="btn-full">Search</button>
+      <a href="/Admin/Index" style="display:flex;align-items:center;justify-content:center;padding:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-weight:600;font-size:14px;text-decoration:none;color:var(--text-muted);min-height:44px;">Clear</a>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;">
+      <div><div class="filter-stat-label">Total</div><div class="filter-stat-value" style="font-size:18px;">Rs. @total.ToString("N0")</div></div>
+      <div><div class="filter-stat-label">Count</div><div class="filter-stat-value" style="font-size:18px;">@count</div></div>
+    </div>
+  </form>
+
+  @if (!expenses.Any()) {
+    <div class="empty-state"><span class="empty-icon">📋</span><p>No expenses found.</p></div>
+  } else {
+    @foreach (var e in expenses) {
+      <div class="expense-card">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@e.Description</div>
+          <div class="expense-details">
+            <span style="font-weight:600;color:var(--text);">@e.UserName</span>
+            <span class="cat-pill">@e.Category</span>
+            <span>@e.ExpenseDate.ToString("dd MMM")</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div class="expense-amount" style="font-size:15px;">Rs. @e.Amount.ToString("N0")</div>
+          <div style="display:flex;gap:6px;">
+            <a href="/Expenses/Edit/@e.Id" style="padding:6px 10px;font-size:12px;background:linear-gradient(135deg,#34D399,#10B981);color:white;border-radius:7px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;">Edit</a>
+            <form asp-controller="Expenses" asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+              @Html.AntiForgeryToken()
+              <input type="hidden" name="id" value="@e.Id" />
+              <button type="submit" class="btn-danger" style="padding:6px 10px;font-size:12px;min-height:32px;">Del</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<div class="section-card">
+  <h2>➕ Add New User</h2>
+  <form asp-controller="Admin" asp-action="AddUser" method="post">
+    @Html.AntiForgeryToken()
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="margin-bottom:0;"><label>User ID</label><input type="text" name="NewUserId" placeholder="e.g., ravi01" required /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Display Name</label><input type="text" name="NewUserName" placeholder="Full name" required /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Password</label><input type="password" name="NewUserPassword" placeholder="Password" required /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Role</label>
+        <select name="NewUserRole"><option value="user">User</option><option value="admin">Admin</option></select>
+      </div>
+    </div>
+    <button type="submit" class="btn-full" style="margin-top:14px;">+ Add User</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h2 style="color:var(--danger);">⚠️ Danger Zone</h2>
+  <div class="danger-zone">
+    <p>Permanently deletes ALL expense data. Cannot be undone.</p>
+    <form asp-controller="Admin" asp-action="DeleteAllExpenses" method="post" onsubmit="return confirm('Delete ALL expenses?')">
+      @Html.AntiForgeryToken()
+      <button type="submit" class="btn-danger btn-full">🗑️ Delete ALL Expenses</button>
+    </form>
+  </div>
+</div>

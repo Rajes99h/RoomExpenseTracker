@@ -1,0 +1,25 @@
+@model RoomExpenseTracker.ViewModels.EditExpenseViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Edit Expense"; ViewData["ActiveTab"] = "myExpenses"; }
+<div class="section-card" style="max-width:600px;">
+  <h2>✏️ Edit Expense</h2>
+  <form asp-controller="Expenses" asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="form-group"><label>Description</label><input asp-for="Description" required /></div>
+    <div class="form-group"><label>Amount (Rs.)</label><input asp-for="Amount" type="number" step="0.01" min="0.01" required /></div>
+    <div class="form-group"><label>Category</label>
+      <select asp-for="Category">
+        <option value="groceries">🛒 Groceries</option>
+        <option value="utilities">⚡ Utilities</option>
+        <option value="rent">🏠 Rent</option>
+        <option value="cleaning">🧹 Cleaning</option>
+        <option value="other">📦 Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Date</label><input asp-for="ExpenseDate" type="date" /></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="submit" style="width:auto;">💾 Save Changes</button>
+      <a href="/Expenses/Index" style="padding:11px 22px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-weight:600;font-size:14px;text-decoration:none;color:var(--text-muted);display:inline-flex;align-items:center;">Cancel</a>
+    </div>
+  </form>
+</div>

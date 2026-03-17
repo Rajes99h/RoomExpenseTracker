@@ -1,0 +1,123 @@
+@model RoomExpenseTracker.ViewModels.MonthlyReportViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Monthly Report"; ViewData["ActiveTab"] = "report"; }
+
+<!-- Month Selector -->
+<div class="section-card">
+  <h2>📈 Monthly Report</h2>
+  <form asp-controller="Report" asp-action="Index" method="get">
+    <input type="hidden" name="year" id="yearInput" value="@Model.Year" />
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Month Select Karo</label>
+      <select name="month" id="monthSelect" onchange="updateYear(this)">
+        @foreach (var m in Model.AvailableMonths) {
+          @if (m.Year == Model.Year && m.Month == Model.Month) {
+            <option value="@m.Month" data-year="@m.Year" selected="selected">@m.Label</option>
+          } else {
+            <option value="@m.Month" data-year="@m.Year">@m.Label</option>
+          }
+        }
+      </select>
+    </div>
+    <button type="submit" class="btn-full">📊 Report Dekho</button>
+  </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-card">
+  <h2>@Model.MonthName — Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-item"><div class="summary-label">Grand Total</div><div class="summary-value">Rs. @Model.GrandTotal.ToString("N0")</div></div>
+    <div class="summary-item"><div class="summary-label">Mera Kharch</div><div class="summary-value">Rs. @Model.MyTotal.ToString("N0")</div></div>
+    <div class="summary-item"><div class="summary-label">Fair Share</div><div class="summary-value">Rs. @Model.FairShare.ToString("N0")</div></div>
+    <div class="summary-item">
+      <div class="summary-label">Mera Balance</div>
+      <div class="summary-value" style="color:@(Model.MyBalance>=0?"#4ade80":"#f87171");">
+        @(Model.MyBalance>=0?"+":"")Rs. @Model.MyBalance.ToString("N0")
+      </div>
+    </div>
+    <div class="summary-item"><div class="summary-label">Entries</div><div class="summary-value">@Model.TotalExpenses</div></div>
+    <div class="summary-item"><div class="summary-label">Members</div><div class="summary-value">@Model.UserSummaries.Count(u=>!u.IsAbsent)</div></div>
+  </div>
+</div>
+
+<!-- Member Cards -->
+<div class="section-card">
+  <h2>👥 Member-wise Breakdown</h2>
+  @if (!Model.UserSummaries.Any()) {
+    <div class="empty-state"><span class="empty-icon">📊</span><p>Is mahine koi expense nahi.</p></div>
+  } else {
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+      @foreach (var u in Model.UserSummaries) {
+        var emoji = Model.UserAvatars.ContainsKey(u.UserId) ? Model.UserAvatars[u.UserId] : "👤";
+        var color = Model.UserColors.ContainsKey(u.UserId)  ? Model.UserColors[u.UserId]  : "#a855f7";
+        <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;text-align:center;">
+          <div style="width:50px;height:50px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:26px;background:@color;">
+            @emoji
+          </div>
+          <div style="font-weight:700;font-size:14px;">@u.UserName</div>
+          @if(u.IsAbsent){<span class="badge badge-danger" style="font-size:10px;">Absent</span>}
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;">
+            <div style="background:var(--primary-soft);border-radius:6px;padding:7px;">
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Paid</div>
+              <div style="font-size:13px;font-weight:700;color:var(--primary);">Rs. @u.Paid.ToString("N0")</div>
+            </div>
+            <div style="background:@(u.Balance>=0?"var(--success-soft)":"var(--danger-soft)");border-radius:6px;padding:7px;">
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Bal</div>
+              <div style="font-size:13px;font-weight:700;color:@(u.Balance>=0?"var(--success)":"var(--danger)");">
+                @(u.Balance>=0?"+":"")Rs. @u.Balance.ToString("N0")
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="balance-table-wrap">
+      <table>
+        <thead><tr><th>Member</th><th>Paid</th><th>Fair Share</th><th>Balance</th></tr></thead>
+        <tbody>
+          @foreach (var u in Model.UserSummaries) {
+            var emoji = Model.UserAvatars.ContainsKey(u.UserId) ? Model.UserAvatars[u.UserId] : "👤";
+            <tr class="@(u.Balance>=0?"balance-row-positive":"balance-row-negative")">
+              <td data-label="Member"><span style="margin-right:6px;">@emoji</span>@u.UserName @if(u.IsAbsent){<span class="badge badge-danger" style="font-size:10px;">Absent</span>}</td>
+              <td data-label="Paid">Rs. @u.Paid.ToString("N2")</td>
+              <td data-label="Fair Share">Rs. @u.FairShare.ToString("N2")</td>
+              <td data-label="Balance">@(u.Balance>=0?"+":"")Rs. @u.Balance.ToString("N2")</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Settlements -->
+@if (Model.Settlements.Any()) {
+<div class="section-card">
+  <h2>💸 Settlements</h2>
+  @foreach (var s in Model.Settlements) {
+    <div class="expense-card">
+      <div><strong style="color:var(--danger);">@s.From</strong> <span style="color:var(--text-muted);">→</span> <strong style="color:var(--success);">@s.To</strong></div>
+      <div class="expense-amount" style="color:var(--danger);">Rs. @s.Amount.ToString("N2")</div>
+    </div>
+  }
+</div>
+}
+
+<!-- Category -->
+@if (Model.CategoryBreakdown.Any()) {
+<div class="section-card">
+  <h2>📦 Category Breakdown</h2>
+  @foreach (var c in Model.CategoryBreakdown) {
+    <div class="cat-bar-wrap">
+      <div class="cat-bar-label"><span style="font-weight:600;">@c.Category</span><span>Rs. @c.Total.ToString("N0") (@c.Percentage%)</span></div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:@c.Percentage%;"></div></div>
+    </div>
+  }
+</div>
+}
+
+<script>
+function updateYear(sel) {
+  document.getElementById("yearInput").value = sel.options[sel.selectedIndex].dataset.year;
+}
+</script>

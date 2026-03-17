@@ -1,0 +1,65 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>@ViewData["Title"] — Aaj Ki Tarif</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="~/css/site.css" />
+  @RenderSection("Styles", required: false)
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🏠 <span>Aaj Ki Tarif</span></h1>
+      <div class="user-info">
+        <strong>@User.FindFirstValue(ClaimTypes.Name)</strong>
+        @if (User.IsInRole("admin")) {
+          <span class="badge" style="font-size:10px;padding:2px 7px;">Admin</span>
+        }
+      </div>
+    </div>
+    <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline">
+      @Html.AntiForgeryToken()
+      <button type="submit" class="btn-logout btn-inline">Logout</button>
+    </form>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrapper" id="tabsWrapper">
+    <a href="/Expenses/Index"         class="tab @(ViewData["ActiveTab"]?.ToString()=="myExpenses"?"active":"")">💸 Expenses</a>
+    <a href="/Expenses/Summary"       class="tab @(ViewData["ActiveTab"]?.ToString()=="summary"?"active":"")">📊 Summary</a>
+    <a href="/Expenses/Balances"      class="tab @(ViewData["ActiveTab"]?.ToString()=="balances"?"active":"")">⚖️ Balances</a>
+    <a href="/Expenses/Absence"       class="tab @(ViewData["ActiveTab"]?.ToString()=="absence"?"active":"")">📅 Absence</a>
+    <a href="/Sabji/Index"            class="tab @(ViewData["ActiveTab"]?.ToString()=="sabji"?"active":"")">🥬 Vegetables</a>
+    <a href="/Waste/Index"            class="tab @(ViewData["ActiveTab"]?.ToString()=="waste"?"active":"")">🗑️ Waste</a>
+    <a href="/Report/Index"           class="tab @(ViewData["ActiveTab"]?.ToString()=="report"?"active":"")">📈 Report</a>
+    <a href="/Profile/Index"          class="tab @(ViewData["ActiveTab"]?.ToString()=="profile"?"active":"")">👤 Profile</a>
+    <a href="/Account/ChangePassword" class="tab @(ViewData["ActiveTab"]?.ToString()=="password"?"active":"")">🔒 Password</a>
+    @if (User.IsInRole("admin")) {
+      <a href="/Admin/Index"          class="tab @(ViewData["ActiveTab"]?.ToString()=="admin"?"active":"")">⚙️ Admin</a>
+    }
+  </div>
+
+  <!-- ALERTS -->
+  @if (TempData["Success"] != null) {
+    <div class="alert alert-success">@TempData["Success"]</div>
+  }
+  @if (TempData["Error"] != null) {
+    <div class="alert alert-error">@TempData["Error"]</div>
+  }
+
+  @RenderBody()
+
+</div>
+<script src="~/js/site.js"></script>
+@RenderSection("Scripts", required: false)
+</body>
+</html>

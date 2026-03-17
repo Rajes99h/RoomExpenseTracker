@@ -1,0 +1,25 @@
+@model RoomExpenseTracker.ViewModels.EditUserViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Edit User"; ViewData["ActiveTab"] = "admin"; }
+<div class="section-card" style="max-width:500px;">
+  <h2>✏️ Edit User</h2>
+  <form asp-controller="Admin" asp-action="EditUser" method="post">
+    @Html.AntiForgeryToken()
+    <input asp-for="UserId" type="hidden" />
+    <div class="form-group">
+      <label>User ID</label>
+      <input value="@Model.UserId" disabled style="background:var(--surface-2);color:var(--text-muted);" />
+    </div>
+    <div class="form-group"><label>Display Name</label><input asp-for="Name" required /></div>
+    <div class="form-group">
+      <label>New Password <small style="color:var(--text-muted);font-weight:400;">(leave blank to keep current)</small></label>
+      <input asp-for="NewPassword" type="password" placeholder="Enter new password" />
+    </div>
+    <div class="form-group"><label>Role</label>
+      <select asp-for="Role"><option value="user">User</option><option value="admin">Admin</option></select>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="submit" style="width:auto;">💾 Save Changes</button>
+      <a href="/Admin/Index" style="padding:11px 22px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-weight:600;font-size:14px;text-decoration:none;color:var(--text-muted);display:inline-flex;align-items:center;">Cancel</a>
+    </div>
+  </form>
+</div>

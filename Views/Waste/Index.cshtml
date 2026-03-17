@@ -1,0 +1,257 @@
+@model RoomExpenseTracker.ViewModels.WasteTurnViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Waste Throw Turn"; ViewData["ActiveTab"] = "waste"; }
+
+<style>
+  .waste-hero { background: linear-gradient(135deg,#667eea 0%,#a855f7 50%,#7c3aed 100%); border-radius: var(--radius); padding: 28px 24px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .waste-hero::before { content:""; position:absolute; top:-40px; right:-40px; width:180px; height:180px; background:rgba(255,255,255,0.06); border-radius:50%; }
+  .waste-hero::after  { content:""; position:absolute; bottom:-50px; left:-20px; width:160px; height:160px; background:rgba(255,255,255,0.04); border-radius:50%; }
+  .waste-hero-content { position:relative; z-index:1; }
+  .waste-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); color:white; padding:5px 14px; border-radius:99px; font-size:12px; font-weight:600; letter-spacing:0.5px; margin-bottom:12px; }
+  .waste-name { color:white; font-size:clamp(24px,5vw,38px); font-weight:800; font-family:Outfit,sans-serif; line-height:1.2; margin-bottom:6px; }
+  .waste-sub  { color:rgba(255,255,255,0.75); font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .next-chip  { background:rgba(255,255,255,0.2); color:white; padding:4px 14px; border-radius:99px; font-size:13px; font-weight:600; }
+  .mark-btn   { background:white; color:var(--primary); font-weight:700; padding:12px 28px; border-radius:10px; font-size:15px; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-family:inherit; white-space:nowrap; }
+  .mark-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+
+  .input-row { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:end; }
+  .admin-grid { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+  .admin-grid-3 { display:grid; grid-template-columns:160px 1fr 1fr auto; gap:12px; align-items:end; }
+
+  .history-item { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-radius:var(--radius-sm); border:1px solid var(--border); margin-bottom:10px; background:var(--surface); transition:all 0.2s; gap:12px; }
+  .history-item:hover { border-color:var(--primary-border); box-shadow:var(--shadow-sm); }
+  .history-item.today-record { border-color:var(--primary); background:var(--primary-soft); }
+  .history-left { display:flex; align-items:center; gap:12px; min-width:0; }
+  .history-icon { width:40px; height:40px; border-radius:50%; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .history-icon.today-icon { background:var(--primary); }
+  .history-name { font-weight:700; font-size:15px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .history-date { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .history-next { font-size:12px; color:var(--primary); font-weight:600; margin-top:2px; }
+  .history-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+
+  .admin-card { background:white; border-radius:var(--radius-sm); border:1px solid var(--border); padding:20px; margin-bottom:14px; }
+  .admin-card h3 { font-size:14px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:16px; }
+
+  .inline-edit { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .inline-edit input { padding:6px 10px; font-size:12px; width:100px; min-width:80px; }
+
+  @@media(max-width:768px) {
+    .admin-grid    { grid-template-columns:1fr; }
+    .admin-grid-3  { grid-template-columns:1fr; }
+    .input-row     { grid-template-columns:1fr; }
+    .history-item  { flex-direction:column; align-items:flex-start; gap:10px; }
+    .history-actions { width:100%; justify-content:flex-start; }
+    .inline-edit input { width:calc(50% - 3px); }
+    .mark-btn      { width:100%; text-align:center; }
+    .waste-hero    { padding:20px 16px; }
+  }
+  @@media(max-width:480px) {
+    .inline-edit   { flex-direction:column; }
+    .inline-edit input { width:100%; }
+    .inline-edit button { width:100%; }
+  }
+</style>
+
+<!-- HERO CARD -->
+<div class="waste-hero">
+  <div class="waste-hero-content">
+    <div class="waste-badge">🗑️ WASTE THROW TURN</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+      <div style="flex:1;min-width:0;">
+        @if (Model.Today != null) {
+          <div class="waste-name">✅ @Model.Today.ThrowerName</div>
+          <div class="waste-sub">
+            <span>Aaj throw kiya — @Model.Today.ThrowDate.ToString("dddd, dd MMMM")</span>
+            @if (!string.IsNullOrEmpty(Model.Today.NextPersonName)) {
+              <span class="next-chip">Agla: @Model.Today.NextPersonName →</span>
+            }
+          </div>
+        } else {
+          <div class="waste-name" style="opacity:0.9;">Aaj kisi ne nahi throw kiya</div>
+          <div class="waste-sub">
+            <span>@Model.CurrentDate</span>
+            @if (Model.Latest != null && !string.IsNullOrEmpty(Model.Latest.NextPersonName)) {
+              <span class="next-chip">Aaj ka turn: @Model.Latest.NextPersonName</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER MARK TODAY -->
+<div class="section-card">
+  <h2 style="margin-bottom:4px;">🗑️ Maine Aaj Throw Kiya</h2>
+  <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">
+    Apna naam daalo — baaki sab ko dikh jayega
+  </p>
+  <form asp-controller="Waste" asp-action="MarkThrown" method="post">
+    @Html.AntiForgeryToken()
+    <div class="input-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Aapka Naam</label>
+        <input type="text" name="throwerName"
+               value="@Model.Today?.ThrowerName"
+               placeholder="Naam likho..." required maxlength="100"
+               style="font-size:16px;" />
+      </div>
+      <div style="padding-bottom:1px;">
+        <button type="submit" class="mark-btn">
+          ✅ Throw Kiya!
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ADMIN PANEL -->
+@if (Model.IsAdmin) {
+<div class="section-card" style="border:2px solid var(--primary-border);background:var(--primary-soft);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+    <div style="width:38px;height:38px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">✏️</div>
+    <h2 style="margin-bottom:0;color:var(--primary);">Admin Control Panel</h2>
+  </div>
+
+  <!-- Aaj ka set -->
+  <div class="admin-card">
+    <h3>Aaj Ka Record Set / Edit Karo</h3>
+    <form asp-controller="Waste" asp-action="AdminSet" method="post">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+      <div class="admin-grid">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Kisne Throw Kiya (Aaj)</label>
+          <input type="text" name="throwerName"
+                 value="@Model.Today?.ThrowerName"
+                 placeholder="Naam..." required maxlength="100" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Agla Kaun Karega</label>
+          <input type="text" name="nextPersonName"
+                 value="@Model.Today?.NextPersonName"
+                 placeholder="Next person..." maxlength="100" />
+        </div>
+        <div style="padding-bottom:1px;">
+          <button type="submit" style="width:auto;padding:11px 20px;white-space:nowrap;">
+            💾 Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Kisi bhi din ka -->
+  <div class="admin-card">
+    <h3>Kisi Bhi Din Ka Record</h3>
+    <form asp-controller="Waste" asp-action="AdminSet" method="post">
+      @Html.AntiForgeryToken()
+      <div class="admin-grid-3">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Date</label>
+          <input type="date" name="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Kisne Throw Kiya</label>
+          <input type="text" name="throwerName" placeholder="Naam..." required maxlength="100" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Agla Kaun</label>
+          <input type="text" name="nextPersonName" placeholder="Next..." maxlength="100" />
+        </div>
+        <div style="padding-bottom:1px;">
+          <button type="submit" style="width:auto;padding:11px 20px;white-space:nowrap;">
+            💾 Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Reset -->
+  <div style="background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:var(--radius-sm);padding:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-weight:700;color:#9F1239;">⚠️ Saara History Delete Karo</div>
+        <div style="color:#9F1239;font-size:12px;margin-top:2px;">Yeh action undo nahi ho sakta</div>
+      </div>
+      <form asp-controller="Waste" asp-action="ResetAll" method="post"
+            onsubmit="return confirm('Saara waste throw history delete karo?')">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn-danger" style="width:auto;">
+          🗑️ Reset All
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+}
+
+<!-- HISTORY -->
+<div class="section-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+    <h2 style="margin-bottom:0;">History 📋</h2>
+    <span style="font-size:12px;color:var(--text-muted);background:var(--border);padding:4px 10px;border-radius:99px;">
+      Last @Model.History.Count records
+    </span>
+  </div>
+
+  @if (!Model.History.Any()) {
+    <div class="empty-state">
+      <div class="empty-icon">🗑️</div>
+      <p>Abhi tak koi record nahi hai</p>
+    </div>
+  } else {
+    @foreach (var record in Model.History) {
+      bool isToday = record.ThrowDate.Date == DateTime.Today;
+      <div class="history-item @(isToday ? "today-record" : "")">
+        <div class="history-left">
+          <div class="history-icon @(isToday ? "today-icon" : "")">
+            @(isToday ? "✅" : "🗑️")
+          </div>
+          <div style="min-width:0;">
+            <div class="history-name">
+              @record.ThrowerName
+              @if (isToday) {
+                <span class="badge" style="font-size:10px;margin-left:6px;vertical-align:middle;">Aaj</span>
+              }
+            </div>
+            <div class="history-date">
+              @record.ThrowDate.ToString("dddd, dd MMMM yyyy")
+            </div>
+            @if (!string.IsNullOrEmpty(record.NextPersonName)) {
+              <div class="history-next">→ Agla: @record.NextPersonName</div>
+            }
+          </div>
+        </div>
+
+        @if (Model.IsAdmin) {
+          <div class="history-actions">
+            <form asp-controller="Waste" asp-action="EditRecord" method="post">
+              @Html.AntiForgeryToken()
+              <input type="hidden" name="id" value="@record.Id" />
+              <div class="inline-edit">
+                <input type="text" name="throwerName" value="@record.ThrowerName"
+                       placeholder="Naam..." required />
+                <input type="text" name="nextPersonName" value="@record.NextPersonName"
+                       placeholder="Agla..." />
+                <button type="submit" class="btn-success"
+                        style="width:auto;font-size:12px;padding:6px 12px;min-height:34px;white-space:nowrap;">
+                  ✏️ Edit
+                </button>
+              </div>
+            </form>
+            <form asp-controller="Waste" asp-action="DeleteRecord" method="post"
+                  onsubmit="return confirm('Delete karo?')">
+              @Html.AntiForgeryToken()
+              <input type="hidden" name="id" value="@record.Id" />
+              <button type="submit" class="btn-danger"
+                      style="width:auto;font-size:12px;padding:6px 12px;min-height:34px;">
+                ❌
+              </button>
+            </form>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

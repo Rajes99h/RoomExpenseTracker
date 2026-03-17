@@ -1,0 +1,47 @@
+@model RoomExpenseTracker.ViewModels.AbsenceViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "Mark Absence"; ViewData["ActiveTab"] = "absence";
+   var users = ViewBag.Users as List<RoomExpenseTracker.Models.User> ?? new List<RoomExpenseTracker.Models.User>();
+   var absences = ViewBag.Absences as List<RoomExpenseTracker.Models.Absence> ?? new List<RoomExpenseTracker.Models.Absence>(); }
+
+<div class="section-card">
+  <h2>📅 Mark Your Absence</h2>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;line-height:1.6;">
+    Going away? Mark yourself absent — your share won't be calculated during that period.
+  </p>
+  <form asp-controller="Expenses" asp-action="MarkAbsent" method="post">
+    @Html.AntiForgeryToken()
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:480px;">
+      <div class="form-group" style="margin-bottom:0;"><label>From Date</label><input asp-for="FromDate" type="date" required /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>To Date</label><input asp-for="ToDate" type="date" required /></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+      <button type="submit" style="width:auto;">📅 Mark Absent</button>
+    </div>
+  </form>
+  <form asp-controller="Expenses" asp-action="ClearAbsence" method="post" style="margin-top:10px;">
+    @Html.AntiForgeryToken()
+    <button type="submit" style="width:auto;background:var(--surface);color:var(--success);border:1.5px solid #A7F3D0;box-shadow:none;">✅ Mark as Present</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h2>👥 Member Status</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+    @foreach (var u in users) {
+      var abs = absences.FirstOrDefault(a => a.UserId == u.UserId);
+      bool isAbsent = abs != null;
+      <div style="background:var(--surface);border:1.5px solid @(isAbsent ? "#FECACA" : "#A7F3D0");border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:@(isAbsent ? "var(--danger-soft)" : "var(--success-soft)");display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+          @(isAbsent ? "😴" : "😊")
+        </div>
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:14px;color:var(--text);">@u.Name</div>
+          <span class="badge @(isAbsent ? "badge-danger" : "badge-success")" style="font-size:10px;margin-top:4px;">@(isAbsent ? "Absent" : "Present")</span>
+          @if (abs != null) {
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">@abs.FromDate.ToString("dd MMM") – @abs.ToDate.ToString("dd MMM")</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

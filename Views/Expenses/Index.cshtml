@@ -1,0 +1,68 @@
+@model RoomExpenseTracker.ViewModels.ExpenseListViewModel
+@{ Layout = "~/Views/Shared/_DashboardLayout.cshtml"; ViewData["Title"] = "My Expenses"; ViewData["ActiveTab"] = "myExpenses"; }
+
+<div class="section-card">
+  <h2>💸 Add Expense</h2>
+  <form asp-controller="Expenses" asp-action="Add" method="post">
+    @Html.AntiForgeryToken()
+    <div class="form-group"><label>Description</label><input type="text" name="Description" placeholder="e.g., Groceries, Rent..." required /></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="margin-bottom:0;"><label>Amount (Rs.)</label><input type="number" name="Amount" placeholder="0.00" step="0.01" min="0.01" required /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Category</label>
+        <select name="Category">
+          <option value="groceries">🛒 Groceries</option>
+          <option value="utilities">⚡ Utilities</option>
+          <option value="rent">🏠 Rent</option>
+          <option value="cleaning">🧹 Cleaning</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:12px;margin-bottom:14px;"><label>Date</label><input type="date" name="ExpenseDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" required /></div>
+    <button type="submit" class="btn-full">+ Add Expense</button>
+  </form>
+</div>
+
+<div class="section-card">
+  <h2>🔍 Filter</h2>
+  <form asp-controller="Expenses" asp-action="Index" method="get">
+    <div class="filter-grid">
+      <div class="form-group" style="margin-bottom:0;"><label>From</label><input type="date" name="from" value="@(Model.FilterFrom.HasValue?Model.FilterFrom.Value.ToString("yyyy-MM-dd"):"")" /></div>
+      <div class="form-group" style="margin-bottom:0;"><label>To</label><input type="date" name="to" value="@(Model.FilterTo.HasValue?Model.FilterTo.Value.ToString("yyyy-MM-dd"):"")" /></div>
+    </div>
+    <div class="filter-grid-btn">
+      <button type="submit">Search</button>
+      <a href="/Expenses/Index" style="display:flex;align-items:center;justify-content:center;padding:11px 20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-weight:600;font-size:14px;text-decoration:none;color:var(--text-muted);min-height:44px;">Clear</a>
+    </div>
+    @if (Model.FilterFrom.HasValue) {
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div><div class="filter-stat-label">Total</div><div class="filter-stat-value" style="font-size:16px;">Rs. @Model.TotalAmount.ToString("N0")</div></div>
+        <div><div class="filter-stat-label">Count</div><div class="filter-stat-value" style="font-size:16px;">@Model.Expenses.Count</div></div>
+        <div><div class="filter-stat-label">Range</div><div style="font-size:12px;font-weight:600;color:var(--primary);margin-top:4px;">@Model.FilterFrom.Value.ToString("dd MMM") – @Model.FilterTo.Value.ToString("dd MMM")</div></div>
+      </div>
+    }
+  </form>
+</div>
+
+<div class="section-card">
+  <h2>📋 My Expenses @if(Model.Expenses.Any()){<span class="badge" style="font-size:11px;">@Model.Expenses.Count</span>}</h2>
+  @if (!Model.Expenses.Any()) {
+    <div class="empty-state"><span class="empty-icon">💸</span><p>No expenses yet.<br/>Add your first one above!</p></div>
+  } else {
+    @foreach (var e in Model.Expenses) {
+      <div class="expense-card">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@e.Description</div>
+          <div class="expense-details"><span class="cat-pill">@e.Category</span><span>@e.ExpenseDate.ToString("dd MMM yyyy")</span></div>
+        </div>
+        <div style="flex-shrink:0;">
+          <div class="expense-amount">Rs. @e.Amount.ToString("N2")</div>
+        </div>
+      </div>
+    }
+    <div style="text-align:right;padding-top:12px;border-top:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text-muted);">Total: </span>
+      <span style="font-size:18px;font-weight:700;color:var(--primary);font-family:Outfit,sans-serif;">Rs. @Model.TotalAmount.ToString("N2")</span>
+    </div>
+  }
+</div>
